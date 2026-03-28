@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>CheckList</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F0F4FF;
+    --surface: #FFFFFF;
+    --surface2: #E8EEFF;
+    --primary: #4361EE;
+    --primary-light: #7B97FF;
+    --accent: #F72585;
+    --text: #1A1F3C;
+    --text-muted: #7E84A3;
+    --done-text: #B0B5D0;
+    --shadow: 0 4px 24px rgba(67,97,238,0.10);
+    --radius: 18px;
+    --item-radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 0;
+  }
+  .phone {
+    width: 100%;
+    max-width: 420px;
+    min-height: 100vh;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Status Bar */
+  .status-bar {
+    background: var(--primary);
+    padding: 10px 20px 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .status-bar .time { font-size: 14px; font-weight: 800; }
+  .status-icons { display: flex; gap: 6px; align-items: center; }
+
+  /* Header */
+  .header {
+    background: var(--primary);
+    padding: 14px 20px 28px;
+    color: white;
+    border-radius: 0 0 28px 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    right: -30px; top: -40px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    right: 30px; top: 30px;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .header-title { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  .header-date { font-size: 12px; opacity: 0.75; font-weight: 600; margin-top: 2px; }
+  .menu-btn {
+    background: rgba(255,255,255,0.18);
+    border: none;
+    color: white;
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .menu-btn:active { background: rgba(255,255,255,0.30); }
+
+  /* Stats */
+  .stats {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .stat-pill {
+    background: rgba(255,255,255,0.18);
+    border-radius: 30px;
+    padding: 4px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+  }
+  .stat-pill span { opacity: 0.8; }
+
+  /* Progress bar */
+  .progress-wrap {
+    background: rgba(255,255,255,0.18);
+    border-radius: 30px;
+    height: 6px;
+    margin-top: 14px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background: white;
+    border-radius: 30px;
+    transition: width 0.4s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* Body */
+  .body {
+    flex: 1;
+    padding: 20px 16px;
+    overflow-y: auto;
+  }
+
+  /* Category filter */
+  .filter-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-chip {
+    flex-shrink: 0;
+    padding: 6px 16px;
+    border-radius: 30px;
+    border: 2px solid transparent;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    background: var(--surface);
+    color: var(--text-muted);
+    transition: all 0.18s;
+  }
+  .filter-chip.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  .filter-chip:not(.active):hover {
+    border-color: var(--primary-light);
+    color: var(--primary);
+  }
+
+  /* Section label */
+  .section-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 6px 4px 10px;
+  }
+
+  /* Check Items */
+  .items-list { display: flex; flex-direction: column; gap: 10px; }
+  .item {
+    background: var(--surface);
+    border-radius: var(--item-radius);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: var(--shadow);
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.3s;
+    cursor: pointer;
+    animation: slideIn 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .item::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    border-radius: 4px 0 0 4px;
+    background: var(--cat-color, var(--primary-light));
+    opacity: 0.6;
+  }
+  .item.done { opacity: 0.65; }
+  .item:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(67,97,238,0.08); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes checkPop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.25); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+  }
+
+  .checkbox {
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    border: 2.5px solid var(--primary-light);
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .item.done .checkbox {
+    background: var(--primary);
+    border-color: var(--primary);
+    animation: checkPop 0.35s ease;
+  }
+  .checkbox svg { display: none; }
+  .item.done .checkbox svg { display: block; }
+
+  .item-content { flex: 1; min-width: 0; }
+  .item-text {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    transition: color 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .item.done .item-text {
+    color: var(--done-text);
+    text-decoration: line-through;
+  }
+  .item-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-weight: 600;
+  }
+  .item-tag {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    background: var(--cat-bg, #EEF1FF);
+    color: var(--cat-color, var(--primary));
+    flex-shrink: 0;
+  }
+  .delete-btn {
+    background: none;
+    border: none;
+    color: #D0D5EE;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 4px;
+    border-radius: 6px;
+    transition: color 0.15s;
+  }
+  .delete-btn:hover { color: var(--accent); }
+
+  /* FAB */
+  .fab-wrap {
+    position: sticky;
+    bottom: 0;
+    padding: 16px 16px 20px;
+    background: linear-gradient(to top, var(--bg) 70%, transparent);
+    pointer-events: none;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .fab {
+    pointer-events: all;
+    width: 58px; height: 58px;
+    border-radius: 18px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(67,97,238,0.38);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .fab:active { transform: scale(0.94); box-shadow: 0 4px 12px rgba(67,97,238,0.25); }
+
+  /* Add Item Panel */
+  .add-panel {
+    position: fixed;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%) translateY(100%);
+    width: 100%; max-width: 420px;
+    background: var(--surface);
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -8px 40px rgba(67,97,238,0.16);
+    padding: 20px 20px 32px;
+    z-index: 100;
+    transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+  }
+  .add-panel.open { transform: translateX(-50%) translateY(0); }
+  .panel-handle {
+    width: 40px; height: 4px;
+    background: #E0E5FF;
+    border-radius: 4px;
+    margin: 0 auto 18px;
+  }
+  .panel-title { font-size: 17px; font-weight: 800; color: var(--text); margin-bottom: 16px; }
+  .input-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .add-input {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 2px solid #E0E5FF;
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.18s;
+  }
+  .add-input:focus { border-color: var(--primary); }
+  .cat-select-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .cat-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 2px solid transparent;
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .add-submit {
+    width: 100%;
+    padding: 15px;
+    border-radius: 14px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(67,97,238,0.30);
+    transition: transform 0.15s, box-shadow 0.15s;
+    margin-top: 4px;
+  }
+  .add-submit:active { transform: scale(0.98); }
+
+  /* Overlay */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,31,60,0.35);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .overlay.show { opacity: 1; pointer-events: all; }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+  }
+  .empty-icon { font-size: 52px; margin-bottom: 12px; }
+  .empty-title { font-size: 17px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+  .empty-sub { font-size: 14px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <div class="time" id="clock">9:41</div>
+    <div class="status-icons">
+      <svg width="16" height="12" fill="white" viewBox="0 0 16 12"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0" width="3" height="12" rx="1"/><rect x="13.5" y="0" width="2.5" height="12" rx="1" opacity=".3"/></svg>
+      <svg width="16" height="12" fill="white" viewBox="0 0 24 16"><ellipse cx="12" cy="8" rx="12" ry="8" opacity=".2"/><ellipse cx="12" cy="8" rx="8" ry="5.5" opacity=".4"/><circle cx="12" cy="8" r="3"/></svg>
+      <svg width="26" height="12" fill="white" viewBox="0 0 26 12"><rect x="0" y="1" width="22" height="10" rx="3" stroke="white" stroke-width="1.5" fill="none"/><rect x="1.5" y="2.5" width="16" height="7" rx="1.5"/><rect x="22.5" y="4" width="3" height="4" rx="1.5"/></svg>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-title">My Checklist ✓</div>
+        <div class="header-date" id="date-label">Loading...</div>
+      </div>
+      <button class="menu-btn" onclick="clearDone()" title="Clear completed">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      </button>
+    </div>
+    <div class="stats">
+      <div class="stat-pill"><span id="done-count">0</span> done</div>
+      <div class="stat-pill"><span id="left-count">0</span> left</div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="body">
+    <!-- Filter chips -->
+    <div class="filter-row" id="filter-row">
+      <button class="filter-chip active" onclick="setFilter('all', this)">All</button>
+      <button class="filter-chip" onclick="setFilter('Work', this)">💼 Work</button>
+      <button class="filter-chip" onclick="setFilter('Personal', this)">🏠 Personal</button>
+      <button class="filter-chip" onclick="setFilter('Shopping', this)">🛒 Shopping</button>
+      <button class="filter-chip" onclick="setFilter('Health', this)">💪 Health</button>
+    </div>
+
+    <div id="items-container"></div>
+  </div>
+
+  <!-- FAB -->
+  <div class="fab-wrap">
+    <button class="fab" onclick="openPanel()">+</button>
+  </div>
+</div>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<!-- Add Panel -->
+<div class="add-panel" id="add-panel">
+  <div class="panel-handle"></div>
+  <div class="panel-title">New Task</div>
+  <div class="input-wrap">
+    <input class="add-input" id="task-input" placeholder="What needs to be done?" maxlength="80" />
+    <input class="add-input" id="note-input" placeholder="Note (optional)" maxlength="60" />
+    <div class="cat-select-row" id="cat-select-row"></div>
+    <button class="add-submit" onclick="addTask()">Add Task</button>
+  </div>
+</div>
+
+<script>
+const CATS = [
+  { name: 'Work',     emoji: '💼', color: '#4361EE', bg: '#EEF1FF' },
+  { name: 'Personal', emoji: '🏠', color: '#7209B7', bg: '#F3E8FF' },
+  { name: 'Shopping', emoji: '🛒', color: '#F77F00', bg: '#FFF3E0' },
+  { name: 'Health',   emoji: '💪', color: '#06D6A0', bg: '#E0FFF6' },
+];
+
+let tasks = [
+  { id: 1, text: 'Review project proposal', note: 'Due Friday', cat: 'Work',     done: false },
+  { id: 2, text: 'Buy groceries',           note: 'Milk, eggs, bread',  cat: 'Shopping', done: false },
+  { id: 3, text: 'Morning run',             note: '6:00 AM',            cat: 'Health',   done: true  },
+  { id: 4, text: 'Call Mom',                note: '',                   cat: 'Personal', done: false },
+  { id: 5, text: 'Submit weekly report',    note: 'By EOD',             cat: 'Work',     done: false },
+];
+let nextId = 6;
+let activeFilter = 'all';
+let selectedCat = 'Work';
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('date-label').textContent =
+    now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+function catInfo(name) { return CATS.find(c => c.name === name) || CATS[0]; }
+
+function render() {
+  const filtered = activeFilter === 'all' ? tasks : tasks.filter(t => t.cat === activeFilter);
+  const pending  = filtered.filter(t => !t.done);
+  const done     = filtered.filter(t => t.done);
+  const total    = tasks.length;
+  const doneAll  = tasks.filter(t => t.done).length;
+
+  document.getElementById('done-count').textContent = doneAll;
+  document.getElementById('left-count').textContent = total - doneAll;
+  document.getElementById('progress-bar').style.width = total ? (doneAll / total * 100) + '%' : '0%';
+
+  let html = '';
+  if (pending.length === 0 && done.length === 0) {
+    html = `<div class="empty"><div class="empty-icon">🎉</div><div class="empty-title">All clear!</div><div class="empty-sub">Tap + to add a new task</div></div>`;
+  } else {
+    if (pending.length) {
+      html += `<div class="section-label">To Do · ${pending.length}</div><div class="items-list">`;
+      pending.forEach(t => html += itemHTML(t));
+      html += '</div>';
+    }
+    if (done.length) {
+      html += `<div class="section-label" style="margin-top:18px">Completed · ${done.length}</div><div class="items-list">`;
+      done.forEach(t => html += itemHTML(t));
+      html += '</div>';
+    }
+  }
+  document.getElementById('items-container').innerHTML = html;
+}
+
+function itemHTML(t) {
+  const c = catInfo(t.cat);
+  return `
+  <div class="item${t.done ? ' done' : ''}" 
+       style="--cat-color:${c.color};--cat-bg:${c.bg}"
+       onclick="toggle(${t.id})">
+    <div class="checkbox">
+      <svg width="14" height="11" viewBox="0 0 14 11" fill="none">
+        <path d="M1.5 5.5L5.5 9.5L12.5 1.5" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="item-content">
+      <div class="item-text">${escape(t.text)}</div>
+      ${t.note ? `<div class="item-sub">${escape(t.note)}</div>` : ''}
+    </div>
+    <div class="item-tag">${c.emoji} ${t.cat}</div>
+    <button class="delete-btn" onclick="event.stopPropagation();del(${t.id})" title="Delete">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>`;
+}
+
+function escape(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toggle(id) {
+  const t = tasks.find(t => t.id === id);
+  if (t) { t.done = !t.done; render(); }
+}
+function del(id) {
+  tasks = tasks.filter(t => t.id !== id); render();
+}
+function clearDone() {
+  tasks = tasks.filter(t => !t.done); render();
+}
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+// Panel
+function openPanel() {
+  document.getElementById('add-panel').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(() => document.getElementById('task-input').focus(), 350);
+  buildCatSelect();
+}
+function closePanel() {
+  document.getElementById('add-panel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('task-input').value = '';
+  document.getElementById('note-input').value = '';
+}
+function buildCatSelect() {
+  const row = document.getElementById('cat-select-row');
+  row.innerHTML = CATS.map(c => `
+    <button class="cat-btn${selectedCat === c.name ? ' active' : ''}"
+      style="background:${selectedCat === c.name ? c.color : c.bg};color:${selectedCat === c.name ? '#fff' : c.color};border-color:${c.color}"
+      onclick="selectCat('${c.name}')">${c.emoji} ${c.name}</button>
+  `).join('');
+}
+function selectCat(name) {
+  selectedCat = name; buildCatSelect();
+}
+function addTask() {
+  const txt = document.getElementById('task-input').value.trim();
+  if (!txt) { document.getElementById('task-input').focus(); return; }
+  tasks.unshift({ id: nextId++, text: txt, note: document.getElementById('note-input').value.trim(), cat: selectedCat, done: false });
+  closePanel();
+  render();
+}
+
+// Enter key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('add-panel').classList.contains('open')) addTask();
+  if (e.key === 'Escape') closePanel();
+});
+
+render();
+</script>
+</body>
+</html>
