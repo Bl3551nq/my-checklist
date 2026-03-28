@@ -194,10 +194,10 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    box-shadow: var(--shadow);
-    transition: transform 0.15s, box-shadow 0.15s, opacity 0.3s;
+    box-shadow: 0 4px 16px rgba(67,97,238,0.10), 0 1.5px 4px rgba(67,97,238,0.07);
+    transition: transform 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s cubic-bezier(.4,0,.2,1), opacity 0.3s;
     cursor: pointer;
-    animation: slideIn 0.3s ease;
+    animation: floatIn 0.45s cubic-bezier(.4,0,.2,1) both;
     position: relative;
     overflow: hidden;
   }
@@ -210,18 +210,41 @@
     background: var(--cat-color, var(--primary-light));
     opacity: 0.6;
   }
-  .item.done { opacity: 0.65; }
-  .item:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(67,97,238,0.08); }
+  .items-list .item:nth-child(1) { animation-delay: 0.00s; }
+  .items-list .item:nth-child(2) { animation-delay: 0.06s; }
+  .items-list .item:nth-child(3) { animation-delay: 0.12s; }
+  .items-list .item:nth-child(4) { animation-delay: 0.18s; }
+  .items-list .item:nth-child(5) { animation-delay: 0.24s; }
+  .items-list .item:nth-child(6) { animation-delay: 0.30s; }
+  .items-list .item:nth-child(7) { animation-delay: 0.36s; }
+  .items-list .item:nth-child(8) { animation-delay: 0.42s; }
+  .item:hover {
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: 0 10px 32px rgba(67,97,238,0.18), 0 3px 8px rgba(67,97,238,0.10);
+  }
+  .item.done { opacity: 0.62; }
+  .item.done:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(67,97,238,0.10); }
+  .item:active { transform: translateY(0px) scale(0.98); box-shadow: 0 2px 8px rgba(67,97,238,0.08); }
 
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
+  @keyframes floatIn {
+    0%   { opacity: 0; transform: translateY(22px) scale(0.97); }
+    60%  { opacity: 1; transform: translateY(-4px) scale(1.01); }
+    80%  { transform: translateY(2px) scale(0.995); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
   }
   @keyframes checkPop {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.25); }
-    70% { transform: scale(0.9); }
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.28); }
+    70%  { transform: scale(0.88); }
     100% { transform: scale(1); }
+  }
+  @keyframes fadeSlideOut {
+    from { opacity: 1; transform: translateX(0); max-height: 80px; margin-bottom: 10px; }
+    to   { opacity: 0; transform: translateX(40px); max-height: 0; margin-bottom: 0; padding: 0; }
+  }
+  .item.removing {
+    animation: fadeSlideOut 0.32s cubic-bezier(.4,0,.2,1) forwards;
+    pointer-events: none;
   }
 
   .checkbox {
@@ -301,11 +324,17 @@
     border: none;
     font-size: 28px;
     cursor: pointer;
-    box-shadow: 0 8px 24px rgba(67,97,238,0.38);
+    box-shadow: 0 8px 24px rgba(67,97,238,0.38), 0 0 0 0 rgba(67,97,238,0.3);
     display: flex; align-items: center; justify-content: center;
     transition: transform 0.15s, box-shadow 0.15s;
+    animation: fabPulse 2.8s ease-in-out infinite;
   }
-  .fab:active { transform: scale(0.94); box-shadow: 0 4px 12px rgba(67,97,238,0.25); }
+  .fab:hover { transform: translateY(-3px) scale(1.07); box-shadow: 0 14px 32px rgba(67,97,238,0.48); }
+  .fab:active { transform: scale(0.94); box-shadow: 0 4px 12px rgba(67,97,238,0.25); animation: none; }
+  @keyframes fabPulse {
+    0%, 100% { box-shadow: 0 8px 24px rgba(67,97,238,0.38), 0 0 0 0 rgba(67,97,238,0.28); }
+    50%       { box-shadow: 0 8px 24px rgba(67,97,238,0.38), 0 0 0 10px rgba(67,97,238,0); }
+  }
 
   /* Add Item Panel */
   .add-panel {
@@ -544,7 +573,17 @@ function toggle(id) {
   if (t) { t.done = !t.done; render(); }
 }
 function del(id) {
-  tasks = tasks.filter(t => t.id !== id); render();
+  const el = document.querySelector(`[data-id="${id}"]`);
+  if (el) {
+    el.classList.add('removing');
+    el.addEventListener('animationend', () => {
+      tasks = tasks.filter(t => t.id !== id);
+      render();
+    }, { once: true });
+  } else {
+    tasks = tasks.filter(t => t.id !== id);
+    render();
+  }
 }
 function clearDone() {
   tasks = tasks.filter(t => !t.done); render();
